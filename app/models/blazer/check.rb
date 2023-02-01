@@ -73,14 +73,15 @@ module Blazer
       end
 
       # do not notify on creation, except when not passing
-      if (state_was != "new" || state != "passing") && state != state_was
-        Blazer::CheckMailer.state_change(self, state, state_was, result.rows.size, message, result.columns, result.rows.first(10).as_json, result.column_types, check_type).deliver_now if emails.present?
-        Blazer::SlackNotifier.state_change(self, state, state_was, result.rows.size, message, check_type)
-      elsif check_type == "alert_notifications" && state == "alerts_found"
+      if check_type == "alert_notifications" && state == "alerts_found"
         uid = result.columns.index("user_id")
         result.rows.each do |r|
           puts "ALERT  USER_ID: #{r[uid]}"
         end
+      elsif (state_was != "new" || state != "passing") && state != state_was
+        Blazer::CheckMailer.state_change(self, state, state_was, result.rows.size, message, result.columns, result.rows.first(10).as_json, result.column_types, check_type).deliver_now if emails.present?
+        Blazer::SlackNotifier.state_change(self, state, state_was, result.rows.size, message, check_type)
+      
       end
       save! if changed?
     end
