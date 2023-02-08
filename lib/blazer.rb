@@ -151,6 +151,22 @@ module Blazer
     end
   end
 
+  def self.process_check_vars(statement, var_params = nil)
+
+    (bind_vars ||= []).concat(statement.variables).uniq!
+    # update in-place so populated in view and consistent across queries on dashboard
+    bind_vars.each do |var|
+      if !var_params[var]
+        default = statement.data_source.variable_defaults[var]
+        # only add if default exists
+        var_params[var] = default if default
+      end
+    end
+    runnable = bind_vars.all? { |v| var_params[v] }
+    statement.add_values(var_params) if runnable
+    runnable
+  end
+
   def self.run_check(check)
     tries = 1
 
@@ -159,6 +175,8 @@ module Blazer
       statement = check.query.statement_object
       data_source = statement.data_source
 
+      success = process_check_vars(statement, check.check_params) if check.check_params
+      
       while tries <= 3
         result = data_source.run_statement(statement, refresh_cache: true, check: check, query: check.query)
         if result.timed_out?

@@ -107,7 +107,7 @@ module Blazer
         end
       end
 
-      def validate_variables
+      def validate_variables && check_type != 'alert_notifications'
         if query.variables.any?
           errors.add(:base, "Query can't have variables")
         end
