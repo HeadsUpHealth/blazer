@@ -75,8 +75,12 @@ module Blazer
       # do not notify on creation, except when not passing
       if check_type == "alert_notifications" && state == "alerts_found"
         uid = result.columns.index("user_id")
+        notify_text = query.description   #TODO - moved to unique field 
+
         result.rows.each do |r|
-          puts "ALERT  USER_ID: #{r[uid]}"
+          #puts "ALERT  USER_ID: #{r[uid]}"
+          record_values = result.columns.each_with_index.map { |col, idx| [col.to_sym, r[idx]]}.to_h
+          NotificationService.send_user_alert(notify_text, record_values) #TODO - change to queue alert
         end
       elsif (state_was != "new" || state != "passing") && state != state_was
         Blazer::CheckMailer.state_change(self, state, state_was, result.rows.size, message, result.columns, result.rows.first(10).as_json, result.column_types, check_type).deliver_now if emails.present?
