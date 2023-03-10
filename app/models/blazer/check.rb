@@ -81,7 +81,7 @@ module Blazer
           action_context = {
             utc_time:  Time.now.utc.to_s,
             controller: 'EventController',
-            action: 'user_alert_notification',
+            action: 'trigger_user_alert_notification',
             user_uuid:  record_values[:user_uuid],
             event_object: "#{self.class.name}/#{self.id}",
             event_object_data: record_values
