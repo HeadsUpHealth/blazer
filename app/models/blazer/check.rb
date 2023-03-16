@@ -74,20 +74,38 @@ module Blazer
 
       # do not notify on creation, except when not passing
       if check_type == "alert_notifications" && state == "alerts_found"
+        
+        #Update check params with last run date time
+        if self.respond_to?(:check_params)
+          ck_parms = self.check_params
+          ck_parms['last_run_at'] = self.last_run_at
+          self.check_params = ck_parms
+        end
+
+        # Keep track of the set of users per check alert
+        user_uuids = []
+
         result.rows.each do |r|
-          #puts "ALERT  USER_ID: #{r[uid]}"
+
           record_values = result.columns.each_with_index.map { |col, idx| [col.to_sym, r[idx]]}.to_h
 
-          action_context = {
-            utc_time:  Time.now.utc.to_s,
-            controller: 'EventController',
-            action: 'trigger_user_alert_notification',
-            user_uuid:  record_values[:user_uuid],
-            event_object: "#{self.class.name}/#{self.id}",
-            event_object_data: record_values
-          }
+          # Only send one alert event per user
+          unless user_uuids.include?(record_values[:user_uuid])
 
-          EventPublisher.new.publish_event(action_context)
+            user_uuids << record_values[:user_uuid]
+
+            action_context = {
+              utc_time:  Time.now.utc.to_s,
+              controller: 'EventController',
+              action: 'trigger_user_alert_notification',
+              user_uuid:  record_values[:user_uuid],
+              event_object: "#{self.class.name}/#{self.id}",
+              event_object_data: record_values
+            }
+
+            EventPublisher.new.publish_event(action_context)
+            
+          end
 
         end
       elsif (state_was != "new" || state != "passing") && state != state_was

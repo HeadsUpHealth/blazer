@@ -175,7 +175,9 @@ module Blazer
       statement = check.query.statement_object
       data_source = statement.data_source
 
-      success = process_check_vars(statement, check.check_params) if check.check_params
+      check_param_values = check.check_params ? check.check_params : {}
+
+      success = process_check_vars(statement, check_param_values)
       
       while tries <= 3
         result = data_source.run_statement(statement, refresh_cache: true, check: check, query: check.query)
