@@ -50,7 +50,7 @@ module Blazer
           end
         elsif check_type == "alert_notifications"
           if result.rows.any?
-            "alerts_found"
+            "rows_found"
           else
             "none"
           end
@@ -60,7 +60,8 @@ module Blazer
           check_type == "missing_data" ? "failing" : "passing"
         end
 
-      self.last_run_at = Time.now if respond_to?(:last_run_at=)
+      finished_time = Time.now 
+      self.last_run_at = finished_time if respond_to?(:last_run_at=)
       self.message = message if respond_to?(:message=)
 
       if respond_to?(:timeouts=)
@@ -73,14 +74,12 @@ module Blazer
       end
 
       # do not notify on creation, except when not passing
-      if check_type == "alert_notifications" && state == "alerts_found"
-        
+      if check_type == "alert_notifications" && state == "rows_found"
+
         #Update check params with last run date time
-        if self.respond_to?(:check_params)
-          ck_parms = self.check_params
-          ck_parms['last_run_at'] = self.last_run_at
-          self.check_params = ck_parms
-        end
+        ck_parms = self.check_params
+        ck_parms['last_run_at'] = finished_time
+        self.check_params = ck_parms
 
         # Keep track of the set of users per check alert
         user_uuids = []
@@ -108,6 +107,9 @@ module Blazer
           end
 
         end
+
+        self.state = "#{user_uuids.size}_rows_found"
+
       elsif (state_was != "new" || state != "passing") && state != state_was
         Blazer::CheckMailer.state_change(self, state, state_was, result.rows.size, message, result.columns, result.rows.first(10).as_json, result.column_types, check_type).deliver_now if emails.present?
         Blazer::SlackNotifier.state_change(self, state, state_was, result.rows.size, message, check_type)
