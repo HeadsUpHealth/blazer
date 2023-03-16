@@ -78,7 +78,7 @@ module Blazer
 
         #Update check params with last run date time
         ck_parms = self.check_params
-        ck_parms['last_run_at'] = finished_time
+        ck_parms['last_run_at'] = finished_time.utc
         self.check_params = ck_parms
 
         # Keep track of the set of users per check alert
