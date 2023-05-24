@@ -22,7 +22,7 @@ module Blazer
       end
     end
 
-    def update_state(result)
+    def update_state(result, filtered_user_uuids=[])
       check_type =
         if respond_to?(:check_type)
           self.check_type
@@ -80,35 +80,38 @@ module Blazer
         ck_parms = self.check_params
         ck_parms['last_run_at'] = finished_time.utc
         self.check_params = ck_parms
-
+        
         # Keep track of the set of users per check alert
-        user_uuids = []
+        result_user_uuids = []
 
         result.rows.each do |r|
 
           record_values = result.columns.each_with_index.map { |col, idx| [col.to_sym, r[idx]]}.to_h
 
-          # Only send one alert event per user
-          unless user_uuids.include?(record_values[:user_uuid])
+          # if there is a set of filtered_user_uuids, then only process for users in this set
+          if filtered_user_uuids.present? && filtered_user_uuids.include?(record_values[:user_uuid])
 
-            user_uuids << record_values[:user_uuid]
+            # Only send one alert event per user
+            unless result_user_uuids.include?(record_values[:user_uuid])
 
-            action_context = {
-              utc_time:  Time.now.utc.to_s,
-              controller: 'EventController',
-              action: 'trigger_user_alert_notification',
-              user_uuid:  record_values[:user_uuid],
-              event_object: "#{self.class.name}/#{self.id}",
-              event_object_data: record_values
-            }
+              result_user_uuids << record_values[:user_uuid]
 
-            EventPublisher.new.publish_event(action_context)
-            
+              action_context = {
+                utc_time:  Time.now.utc.to_s,
+                controller: 'EventController',
+                action: 'trigger_user_alert_notification',
+                user_uuid:  record_values[:user_uuid],
+                event_object: "#{self.class.name}/#{self.id}",
+                event_object_data: record_values
+              }
+
+              EventPublisher.new.publish_event(action_context)
+              
+            end
           end
-
         end
 
-        self.state = "#{user_uuids.size}_rows_found"
+        self.state = "#{result_user_uuids.size}_rows_found"
 
       elsif (state_was != "new" || state != "passing") && state != state_was
         Blazer::CheckMailer.state_change(self, state, state_was, result.rows.size, message, result.columns, result.rows.first(10).as_json, result.column_types, check_type).deliver_now if emails.present?
