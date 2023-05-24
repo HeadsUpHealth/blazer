@@ -167,7 +167,7 @@ module Blazer
     runnable
   end
 
-  def self.run_check(check, filtered_user_uuids=[])
+  def self.run_check(check, filtered_user_uuids=[], test_check=false)
     tries = 1
 
     ActiveSupport::Notifications.instrument("run_check.blazer", check_id: check.id, query_id: check.query.id, state_was: check.state) do |instrument|
@@ -197,7 +197,7 @@ module Blazer
 
       begin
         check.reload # in case state has changed since job started
-        check.update_state(result, filtered_user_uuids)
+        check.update_state(result, filtered_user_uuids, test_check)
       rescue ActiveRecord::RecordNotFound
         # check deleted
       end

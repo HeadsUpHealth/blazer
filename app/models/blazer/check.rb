@@ -22,7 +22,7 @@ module Blazer
       end
     end
 
-    def update_state(result, filtered_user_uuids=[])
+    def update_state(result, filtered_user_uuids=[], test_check=false)
       check_type =
         if respond_to?(:check_type)
           self.check_type
@@ -87,6 +87,8 @@ module Blazer
         result.rows.each do |r|
 
           record_values = result.columns.each_with_index.map { |col, idx| [col.to_sym, r[idx]]}.to_h
+
+          record_values[:test_alert] = true if test_check
 
           # if there is a set of filtered_user_uuids, then only process for users in this set
           if filtered_user_uuids.present? && filtered_user_uuids.include?(record_values[:user_uuid])
