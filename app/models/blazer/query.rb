@@ -46,8 +46,14 @@ module Blazer
       Statement.new(statement).cohort_analysis?
     end
 
-    def statement_object
-      Statement.new(statement, data_source)
+    def statement_object(tags={})
+      stmt = statement
+      if tags.present?
+        tags.each do |k,v|
+          stmt = stmt.gsub(/#{k}/,v)
+        end
+      end
+      Statement.new(stmt, data_source)
     end
   end
 end

@@ -167,12 +167,12 @@ module Blazer
     runnable
   end
 
-  def self.run_check(check, filtered_user_uuids=[], test_check=false)
+  def self.run_check(check, filtered_user_uuids=[], tags={}, test_check=false)
     tries = 1
 
     ActiveSupport::Notifications.instrument("run_check.blazer", check_id: check.id, query_id: check.query.id, state_was: check.state) do |instrument|
       # try 3 times on timeout errors
-      statement = check.query.statement_object
+      statement = check.query.statement_object(tags)
       data_source = statement.data_source
 
       check_param_values = check.check_params ? check.check_params : {}
