@@ -177,7 +177,8 @@ module Blazer
 
       check_param_values = check.check_params ? check.check_params : {}
 
-      Rails.logger.info "[blazer check] statement=#{statement} check_param_values=#{check.check_param_values}"
+      #TODO - change to debug at some point
+      Rails.logger.info "[blazer check] statement=#{statement.statement} check_param_values=#{check_param_values}"
 
       success = process_check_vars(statement, check_param_values)
       
