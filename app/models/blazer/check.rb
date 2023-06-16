@@ -98,17 +98,12 @@ module Blazer
 
               result_user_uuids << record_values[:user_uuid]
 
-              action_context = {
-                utc_time:  Time.now.utc.to_s,
-                controller: 'EventController',
-                action: 'trigger_user_alert_notification',
-                user_uuid:  record_values[:user_uuid],
-                event_object: "#{self.class.name}/#{self.id}",
-                event_object_data: record_values
-              }
+              event_object = "#{self.class.name}/#{self.id}"
+              event_object_data = record_values
 
-              EventPublisher.new.publish_event(action_context)
-              
+              EventPublisher.publish_event('EventController', 'trigger_user_alert_notification', 
+                record_values[:user_uuid], event_object, event_object_data)
+
             end
           end
         end
